@@ -20,27 +20,38 @@ const stringifyField = (val: any): string => {
   return String(val);
 };
 
-/** Convert an SVG string to a PNG base64 data URL via an off-screen canvas */
+/** Convert an SVG string to a PNG base64 data URL via an off-screen canvas.
+ *  Uses a data: URI (not blob URL) to avoid canvas taint from cross-origin resources.
+ */
 export async function svgToPngDataUrl(svgString: string, width = 900, height = 500): Promise<string | null> {
   return new Promise((resolve) => {
     try {
-      const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
+      // Inline all external references by stripping font-face declarations that reference external URLs
+      // and replacing with a safe embedded version to avoid canvas taint
+      const cleanSvg = svgString
+        .replace(/@font-face\s*\{[^}]*\}/g, "") // remove @font-face blocks
+        .replace(/font-family:[^;"}]*/g, "font-family:sans-serif"); // fallback font
+
+      // Use a data URI instead of blob URL — avoids CORS taint on canvas
+      const encoded = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(cleanSvg);
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { resolve(null); return; }
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
-        resolve(canvas.toDataURL("image/png"));
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { resolve(null); return; }
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/png"));
+        } catch {
+          resolve(null);
+        }
       };
-      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-      img.src = url;
+      img.onerror = () => resolve(null);
+      img.src = encoded;
     } catch {
       resolve(null);
     }
