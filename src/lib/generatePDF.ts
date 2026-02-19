@@ -117,21 +117,26 @@ export async function generatePDF({ assignment, papers, params, diagramImages, l
     y += 7;
   };
 
-  // ── COVER PAGE — plain white, centred, mimicking TTU format ───────────────
+  // ── COVER PAGE ───────────────────────────────────────────────────────────────
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, pageW, pageH, "F");
 
-  // Institution name at top
-  y = 22;
-  setFont("normal", 12);
+  // University name — top of page
+  y = 20;
+  setFont("bold", 12);
   doc.setTextColor(0, 0, 0);
-  doc.text("TAKORADI TECHNICAL UNIVERSITY.", pageW / 2, y, { align: "center" });
+  doc.text("TAKORADI TECHNICAL UNIVERSITY", pageW / 2, y, { align: "center" });
+  y += 6;
+
+  // Thin rule under name
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.line(marginL + 20, y, pageW - marginR - 20, y);
   y += 10;
 
-  // Use pre-loaded logo passed from caller (avoids dynamic import at build time)
+  // Logo — centred, appropriately sized
   let logoBase64: string | null = providedLogo ?? null;
-
-  const logoSize = 55;
+  const logoSize = 48;
   const logoX = (pageW - logoSize) / 2;
   if (logoBase64) {
     doc.addImage(logoBase64, "JPEG", logoX, y, logoSize, logoSize);
@@ -141,17 +146,23 @@ export async function generatePDF({ assignment, papers, params, diagramImages, l
   }
 
   // Faculty / Department
-  setFont("normal", 12);
+  setFont("normal", 11);
   doc.setTextColor(0, 0, 0);
   doc.text("FACULTY OF APPLIED SCIENCES", pageW / 2, y, { align: "center" });
-  y += 7;
-  doc.text("DEPARTMENT OF COMPUTER SCIENCE.", pageW / 2, y, { align: "center" });
-  y += 12;
+  y += 6;
+  doc.text("DEPARTMENT OF COMPUTER SCIENCE", pageW / 2, y, { align: "center" });
+  y += 14;
 
-  // Assignment title
-  setFont("normal", 12);
-  doc.text("RESEARCH METHODS ASSIGNMENT", pageW / 2, y, { align: "center" });
+  // Thin rule
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.line(marginL + 10, y, pageW - marginR - 10, y);
   y += 10;
+
+  // Assignment label
+  setFont("bold", 11);
+  doc.text("RESEARCH METHODS ASSIGNMENT", pageW / 2, y, { align: "center" });
+  y += 12;
 
   // Topic
   const topicText = params.topic || "Research Topic";
@@ -161,43 +172,44 @@ export async function generatePDF({ assignment, papers, params, diagramImages, l
     doc.text(line, pageW / 2, y, { align: "center" });
     y += 6;
   });
-  y += 10;
+  y += 14;
 
   // BY
-  setFont("normal", 12);
-  doc.text("BY", pageW / 2, y, { align: "center" });
-  y += 10;
+  setFont("italic", 11);
+  doc.text("By", pageW / 2, y, { align: "center" });
+  y += 8;
 
   // Student Name
-  setFont("normal", 12);
+  setFont("bold", 12);
   doc.text((params.studentName || "Student Name").toUpperCase(), pageW / 2, y, { align: "center" });
-  y += 8;
+  y += 7;
 
   // Index Number
   if (params.indexNumber) {
-    setFont("normal", 12);
+    setFont("normal", 11);
     doc.text(params.indexNumber.toUpperCase(), pageW / 2, y, { align: "center" });
-    y += 8;
+    y += 7;
   }
 
   // Submission date
   if (params.submissionDate) {
-    setFont("normal", 12);
-    doc.text(params.submissionDate.toUpperCase(), pageW / 2, y, { align: "center" });
-    y += 8;
+    setFont("normal", 11);
+    doc.text(params.submissionDate, pageW / 2, y, { align: "center" });
+    y += 7;
   }
+
+  y += 6;
 
   // Course / Lecturer
   if (params.courseName) {
-    y += 4;
     setFont("normal", 11);
     doc.text(params.courseName.toUpperCase(), pageW / 2, y, { align: "center" });
-    y += 7;
+    y += 6;
   }
   if (params.lecturer) {
     setFont("normal", 11);
     doc.text(`LECTURER: ${(params.lecturer).toUpperCase()}`, pageW / 2, y, { align: "center" });
-    y += 7;
+    y += 6;
   }
 
   // ── TABLE OF CONTENTS ──────────────────────────────────────────────

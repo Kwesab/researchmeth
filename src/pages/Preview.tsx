@@ -82,11 +82,10 @@ export default function Preview() {
             try {
               const rawCode = typeof d.code === "string" ? d.code : JSON.stringify(d.code);
               const code = sanitize(rawCode);
-              // Use a unique id per render to avoid mermaid caching conflicts
               const id = `pdf_diag_${i}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
               const { svg } = await mermaid.render(id, code);
-              // High-res PNG for crisp PDF embedding
-              return await svgToPngDataUrl(svg, 1400, 700);
+              // Render at 2× resolution for crisp PDF output
+              return await svgToPngDataUrl(svg, 1600, 800);
             } catch {
               return null;
             }
@@ -104,12 +103,16 @@ export default function Preview() {
 
   const handleDownloadRIS = () => {
     const ris = generateRIS(papers);
-    const blob = new Blob([ris], { type: "application/x-research-info-systems" });
+    // text/plain so OS and browsers don't block — Mendeley/EndNote key off the .ris extension
+    const blob = new Blob([ris], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "references.ris";
+    document.body.appendChild(a);
     a.click();
-    toast({ title: "RIS Downloaded", description: "references.ris — open in EndNote or Mendeley." });
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    toast({ title: "RIS Downloaded", description: "references.ris — open directly in Mendeley or EndNote." });
   };
 
   const handleDownloadBibTeX = () => {
@@ -120,12 +123,15 @@ export default function Preview() {
   journal={${p.venue || "IEEE"}},
   url={${p.url || ""}},
 }`).join("\n\n");
-    const blob = new Blob([bib], { type: "text/plain" });
+    const blob = new Blob([bib], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "references.bib";
+    document.body.appendChild(a);
     a.click();
-    toast({ title: "BibTeX Downloaded", description: "references.bib saved." });
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    toast({ title: "BibTeX Downloaded", description: "references.bib — open in Mendeley or Zotero." });
   };
 
   const stringifyContent = (val: any): string => {
