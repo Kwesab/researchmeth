@@ -79,13 +79,25 @@ export default function Preview() {
     toast({ title: "BibTeX Downloaded", description: "references.bib saved." });
   };
 
+  const stringifyContent = (val: any): string => {
+    if (!val) return "";
+    if (typeof val === "string") return val;
+    if (typeof val === "object") {
+      // Handle {title, plan} or {title, content} or any object by joining values
+      return Object.values(val)
+        .map((v) => (typeof v === "string" ? v : JSON.stringify(v)))
+        .join("\n\n");
+    }
+    return String(val);
+  };
+
   const sections = [
-    { key: "abstract", label: "Abstract", content: assignment?.abstract },
-    { key: "introduction", label: "1. Introduction", content: assignment?.introduction },
-    { key: "literature", label: "2. Literature Review", content: assignment?.literatureReview },
-    { key: "methodology", label: "3. Proposed Research Method", content: assignment?.proposedMethod },
-    { key: "implementation", label: "4. Implementation Plan", content: assignment?.implementationPlan },
-    { key: "conclusion", label: "5. Conclusion", content: assignment?.conclusion },
+    { key: "abstract", label: "Abstract", content: stringifyContent(assignment?.abstract) },
+    { key: "introduction", label: "1. Introduction", content: stringifyContent(assignment?.introduction) },
+    { key: "literature", label: "2. Literature Review", content: stringifyContent(assignment?.literatureReview) },
+    { key: "methodology", label: "3. Proposed Research Method", content: stringifyContent(assignment?.proposedMethod) },
+    { key: "implementation", label: "4. Implementation Plan", content: stringifyContent(assignment?.implementationPlan) },
+    { key: "conclusion", label: "5. Conclusion", content: stringifyContent(assignment?.conclusion) },
   ];
 
   return (
