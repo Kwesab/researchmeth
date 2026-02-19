@@ -45,7 +45,7 @@ export default function Preview() {
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      // Pre-load logo: fetch the static import URL and convert to base64
+      // Pre-load logo: use the static import URL and read as base64 via FileReader
       let logoBase64: string | null = null;
       try {
         const res = await fetch(universityLogo);
