@@ -24,10 +24,12 @@ export default function Index() {
   const [form, setForm] = useState({
     topic: "",
     studentName: "",
+    indexNumber: "",
     courseName: "",
     institution: "",
     lecturer: "",
     year: new Date().getFullYear().toString(),
+    submissionDate: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -115,6 +117,19 @@ export default function Index() {
                 />
               </div>
               <div>
+                <Label className="text-sm font-medium mb-2 block" style={{ color: "hsl(var(--foreground))" }}>
+                  Index / Student Number
+                </Label>
+                <Input
+                  placeholder="e.g. BC/ICT/22/148"
+                  value={form.indexNumber}
+                  onChange={e => setForm({ ...form, indexNumber: e.target.value })}
+                  style={{ background: "hsl(var(--navy-surface))", borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label className="text-sm font-medium mb-2 block" style={{ color: "hsl(var(--foreground))" }}>Course Name</Label>
                 <Input
                   placeholder="e.g. Research Methodology"
@@ -123,17 +138,17 @@ export default function Index() {
                   style={{ background: "hsl(var(--navy-surface))", borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium mb-2 block" style={{ color: "hsl(var(--foreground))" }}>Institution</Label>
                 <Input
-                  placeholder="University name"
+                  placeholder="e.g. Takoradi Technical University"
                   value={form.institution}
                   onChange={e => setForm({ ...form, institution: e.target.value })}
                   style={{ background: "hsl(var(--navy-surface))", borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium mb-2 block" style={{ color: "hsl(var(--foreground))" }}>Lecturer Name</Label>
                 <Input
@@ -143,13 +158,22 @@ export default function Index() {
                   style={{ background: "hsl(var(--navy-surface))", borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
                 />
               </div>
+              <div>
+                <Label className="text-sm font-medium mb-2 block" style={{ color: "hsl(var(--foreground))" }}>Year</Label>
+                <Input
+                  placeholder="2025"
+                  value={form.year}
+                  onChange={e => setForm({ ...form, year: e.target.value })}
+                  style={{ background: "hsl(var(--navy-surface))", borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
+                />
+              </div>
             </div>
             <div>
-              <Label className="text-sm font-medium mb-2 block" style={{ color: "hsl(var(--foreground))" }}>Year</Label>
+              <Label className="text-sm font-medium mb-2 block" style={{ color: "hsl(var(--foreground))" }}>Submission Date</Label>
               <Input
-                placeholder="2025"
-                value={form.year}
-                onChange={e => setForm({ ...form, year: e.target.value })}
+                placeholder={new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                value={form.submissionDate}
+                onChange={e => setForm({ ...form, submissionDate: e.target.value })}
                 style={{ background: "hsl(var(--navy-surface))", borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
               />
             </div>
