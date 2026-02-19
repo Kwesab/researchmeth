@@ -85,10 +85,15 @@ Generate a COMPLETE and DETAILED research assignment. Return ONLY a valid JSON o
 IMPORTANT INSTRUCTIONS:
 - Write every section in FULL DETAIL. Do not be brief. This is a complete academic assignment.
 - The introduction MUST start with a broad engaging story/narrative before narrowing to specifics.
-- Literature review MUST reference papers as [1], [2], [3], [4], [5].
+- Literature review MUST reference papers as [1], [2], [3], [4], [5] IN PROSE TEXT ONLY.
 - Proposed method MUST be genuinely novel, synthesizing from all papers.
 - References MUST be in IEEE format: [N] FirstInitial. LastName, "Title," Venue, year.
-- Diagrams MUST be valid Mermaid.js code. Keep them syntactically correct.
+- MERMAID DIAGRAM RULES - VERY IMPORTANT:
+  * NEVER place citation numbers like [1] or [2] inside any Mermaid node label text - square brackets inside label text BREAK the parser with a syntax error.
+  * The only square brackets allowed are the outer node delimiters themselves, e.g. A[Label text here] - the label text must NOT contain square brackets.
+  * NEVER use the ampersand character (&) inside node labels - always use the word "and".
+  * Keep all node labels short, plain, and free of special characters.
+  * Only use valid Mermaid.js v11 syntax (graph TD, flowchart LR, gantt).
 - Return ONLY the JSON object, no markdown code blocks, no extra text.`;
 
     console.log("Calling Lovable AI for assignment generation...");
