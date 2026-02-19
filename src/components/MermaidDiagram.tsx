@@ -5,6 +5,24 @@ interface MermaidDiagramProps {
   id: string;
 }
 
+/**
+ * Sanitize Mermaid code to fix common AI-generated syntax errors.
+ * Removes citation patterns like [1],[2],[3] inside node labels which
+ * conflict with Mermaid's square bracket node syntax.
+ */
+function sanitizeMermaidCode(code: string): string {
+  if (!code) return code;
+  // Remove citation refs like [1],[2],[3] that appear inside node labels
+  // e.g. "Literature Review & Gap Analysis[1],[2],[3]" -> "Literature Review and Gap Analysis"
+  return code
+    .replace(/\[(\d+)\](,\[(\d+)\])*/g, "")   // strip [1],[2],[3] etc.
+    .replace(/&/g, "and")                        // & can sometimes confuse parsers
+    .replace(/≤/g, "<=")                         // replace unicode math
+    .replace(/[\u2019\u2018]/g, "'")             // smart quotes
+    .replace(/[\u201C\u201D]/g, '"');            // smart double quotes
+}
+
+
 export default function MermaidDiagram({ code, id }: MermaidDiagramProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +48,10 @@ export default function MermaidDiagram({ code, id }: MermaidDiagramProps) {
           },
         });
         const cleanId = id.replace(/[^a-zA-Z0-9]/g, "_");
-        const { svg: rendered } = await mermaid.render(cleanId, code);
+        // Sanitize: remove citation patterns like [1],[2] inside node labels
+        // that break Mermaid's square bracket node syntax
+        const safeCode = sanitizeMermaidCode(code);
+        const { svg: rendered } = await mermaid.render(cleanId, safeCode);
         if (!cancelled) setSvg(rendered);
       } catch (e: any) {
         if (!cancelled) setError(e.message);

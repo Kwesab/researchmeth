@@ -49,14 +49,23 @@ export default function Preview() {
       if (assignment?.diagrams?.length) {
         const mermaid = (await import("mermaid")).default;
         mermaid.initialize({ startOnLoad: false, theme: "dark" });
+        // Sanitize helper — mirrors MermaidDiagram component
+        const sanitize = (code: string) => code
+          .replace(/\[(\d+)\](,\[(\d+)\])*/g, "")
+          .replace(/&/g, "and")
+          .replace(/≤/g, "<=")
+          .replace(/[\u2019\u2018]/g, "'")
+          .replace(/[\u201C\u201D]/g, '"');
+
         diagramImages = await Promise.all(
           assignment.diagrams.map(async (d: any, i: number) => {
             try {
-              const code = typeof d.code === "string" ? d.code : JSON.stringify(d.code);
+              const rawCode = typeof d.code === "string" ? d.code : JSON.stringify(d.code);
+              const code = sanitize(rawCode);
               const id = `pdf_diag_${i}_${Date.now()}`;
               const { svg } = await mermaid.render(id, code);
-              // Natural size from SVG viewBox for good resolution
-              return await svgToPngDataUrl(svg, 1200, 600);
+              // High-res PNG for crisp PDF embedding
+              return await svgToPngDataUrl(svg, 1400, 700);
             } catch {
               return null;
             }
