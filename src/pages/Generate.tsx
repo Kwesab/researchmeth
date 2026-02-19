@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Circle, Loader2, XCircle, GraduationCap, AlertCircle } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, XCircle, GraduationCap, AlertCircle, Search, Cpu, GitBranch } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,12 +20,20 @@ const STEPS = [
 
 type StepStatus = "pending" | "active" | "done" | "error";
 
+// High-level phases shown prominently at the top
+const PHASES = [
+  { id: 0, label: "Searching Papers", icon: Search, desc: "Querying Semantic Scholar & OpenAlex for relevant papers..." },
+  { id: 1, label: "Generating Assignment", icon: Cpu, desc: "AI is analysing papers and writing the full assignment..." },
+  { id: 2, label: "Rendering Diagrams", icon: GitBranch, desc: "Building Mermaid system diagrams and compiling output..." },
+];
+
 export default function Generate() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [stepStatuses, setStepStatuses] = useState<StepStatus[]>(Array(11).fill("pending"));
   const [currentStep, setCurrentStep] = useState(0);
+  const [currentPhase, setCurrentPhase] = useState<number>(-1);
   const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -62,7 +70,8 @@ export default function Generate() {
 
   const runPipeline = async () => {
     try {
-      // Step 1-3: Search papers
+      // ── Phase 0: Searching Papers ──────────────────────────────────
+      setCurrentPhase(0);
       setCurrentStep(0);
       updateStep(0, "active");
       addLog(`Starting paper search for topic: "${params.topic}"`);
@@ -81,7 +90,8 @@ export default function Generate() {
         addLog(`Paper [${i + 1}]: ${p.title?.substring(0, 60)}...`);
       });
 
-      // Step 4-6: AI Analysis
+      // ── Phase 1: Generating Assignment ────────────────────────────
+      setCurrentPhase(1);
       setCurrentStep(3);
       updateStep(3, "active");
       addLog("Sending papers to Gemini AI for analysis...");
@@ -94,13 +104,8 @@ export default function Generate() {
 
       updateStep(3, "done");
       updateStep(4, "done");
-      addLog("Research gaps identified. Novel methodology synthesized.");
-
-      // Step 7
-      setCurrentStep(6);
       updateStep(5, "done");
-      updateStep(6, "done");
-      addLog("Mermaid diagrams generated (4 diagrams).");
+      addLog("Research gaps identified. Novel methodology synthesized.");
 
       // Step 8
       setCurrentStep(7);
@@ -117,6 +122,15 @@ export default function Generate() {
       updateStep(9, "done");
       addLog(".RIS reference file generated (EndNote/Mendeley compatible).");
 
+      // ── Phase 2: Rendering Diagrams ───────────────────────────────
+      setCurrentPhase(2);
+      setCurrentStep(6);
+      updateStep(6, "active");
+      addLog("Rendering Mermaid diagrams...");
+      await new Promise(r => setTimeout(r, 600));
+      updateStep(6, "done");
+      addLog("Mermaid diagrams generated (4 diagrams).");
+
       // Step 11
       setCurrentStep(10);
       updateStep(10, "done");
@@ -125,13 +139,13 @@ export default function Generate() {
       // Store in sessionStorage and navigate
       sessionStorage.setItem("researchData", JSON.stringify({ papers: papersData.papers, assignment: assignmentData, params }));
 
+      setCurrentPhase(3); // all done
       setTimeout(() => navigate("/preview"), 800);
     } catch (err: any) {
       const msg = err.message || "Unknown error";
       setError(msg);
       addLog(`ERROR: ${msg}`);
       toast({ title: "Generation Failed", description: msg, variant: "destructive" });
-      // Mark current active step as error
       setStepStatuses(prev => prev.map(s => s === "active" ? "error" : s));
     }
   };
@@ -154,6 +168,64 @@ export default function Generate() {
       </header>
 
       <div className="container mx-auto px-6 py-10 max-w-5xl">
+
+        {/* ── Phase Banner ── */}
+        <div className="mb-6 grid grid-cols-3 gap-3">
+          {PHASES.map((phase, idx) => {
+            const Icon = phase.icon;
+            const isActive = currentPhase === idx;
+            const isDone = currentPhase > idx;
+            const isError = error && currentPhase === idx;
+            return (
+              <div
+                key={phase.id}
+                className="rounded-xl p-4 flex flex-col gap-2 transition-all duration-500"
+                style={{
+                  background: isActive
+                    ? "hsl(var(--gold) / 0.1)"
+                    : isDone
+                    ? "hsl(var(--navy-surface))"
+                    : "hsl(var(--navy-surface) / 0.4)",
+                  border: isActive
+                    ? "1.5px solid hsl(var(--gold) / 0.6)"
+                    : isDone
+                    ? "1.5px solid hsl(var(--gold) / 0.25)"
+                    : "1.5px solid hsl(var(--navy-border))",
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  {isDone ? (
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: "hsl(var(--gold))" }} />
+                  ) : isActive ? (
+                    <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin" style={{ color: "hsl(var(--gold))" }} />
+                  ) : isError ? (
+                    <XCircle className="w-5 h-5 flex-shrink-0 text-red-400" />
+                  ) : (
+                    <Icon className="w-5 h-5 flex-shrink-0" style={{ color: "hsl(var(--navy-border))" }} />
+                  )}
+                  <span
+                    className="font-semibold text-sm"
+                    style={{
+                      color: isActive
+                        ? "hsl(var(--gold))"
+                        : isDone
+                        ? "hsl(var(--foreground))"
+                        : "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    {phase.label}
+                  </span>
+                </div>
+                {isActive && (
+                  <p className="text-xs leading-snug" style={{ color: "hsl(var(--muted-foreground))" }}>
+                    {phase.desc}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between text-sm mb-2">
@@ -162,7 +234,7 @@ export default function Generate() {
           </div>
           <div className="h-2 rounded-full overflow-hidden" style={{ background: "hsl(var(--navy-border))" }}>
             <div
-              className="h-full progress-bar-fill rounded-full"
+              className="h-full progress-bar-fill rounded-full transition-all duration-500"
               style={{ width: `${(progress / 11) * 100}%` }}
             />
           </div>
