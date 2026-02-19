@@ -10,6 +10,7 @@ import MermaidDiagram from "@/components/MermaidDiagram";
 import EndnoteScreenshot from "@/components/EndnoteScreenshot";
 import { generatePDF, svgToPngDataUrl } from "@/lib/generatePDF";
 import { generateRIS } from "@/lib/generateRIS";
+import universityLogo from "@/assets/university-logo.jpg";
 
 export default function Preview() {
   const navigate = useNavigate();
@@ -44,11 +45,26 @@ export default function Preview() {
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
     try {
+      // Pre-load logo: fetch the static import URL and convert to base64
+      let logoBase64: string | null = null;
+      try {
+        const res = await fetch(universityLogo);
+        const blob = await res.blob();
+        logoBase64 = await new Promise<string | null>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        logoBase64 = null;
+      }
+
       // Render each Mermaid diagram to SVG, then convert to PNG for embedding
       let diagramImages: (string | null)[] = [];
       if (assignment?.diagrams?.length) {
-        const mermaid = (await import("mermaid")).default;
-        mermaid.initialize({ startOnLoad: false, theme: "dark" });
+        const mermaidModule = await import("mermaid");
+        const mermaid = mermaidModule.default;
         // Sanitize helper — mirrors MermaidDiagram component
         const sanitize = (code: string) => code
           .replace(/\[[\d,\s]+\]/g, "")
@@ -66,7 +82,8 @@ export default function Preview() {
             try {
               const rawCode = typeof d.code === "string" ? d.code : JSON.stringify(d.code);
               const code = sanitize(rawCode);
-              const id = `pdf_diag_${i}_${Date.now()}`;
+              // Use a unique id per render to avoid mermaid caching conflicts
+              const id = `pdf_diag_${i}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
               const { svg } = await mermaid.render(id, code);
               // High-res PNG for crisp PDF embedding
               return await svgToPngDataUrl(svg, 1400, 700);
@@ -76,7 +93,7 @@ export default function Preview() {
           })
         );
       }
-      await generatePDF({ assignment, papers, params, diagramImages });
+      await generatePDF({ assignment, papers, params, diagramImages, logoBase64 });
       toast({ title: "PDF Downloaded", description: "ResearchAssignment.pdf saved to your downloads." });
     } catch (e: any) {
       toast({ title: "PDF Error", description: e.message, variant: "destructive" });

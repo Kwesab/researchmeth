@@ -5,6 +5,7 @@ interface GeneratePDFOptions {
   papers: any[];
   params: any;
   diagramImages?: (string | null)[]; // base64 PNG data URLs for each diagram
+  logoBase64?: string | null; // pre-loaded logo passed from caller
 }
 
 const stringifyField = (val: any): string => {
@@ -46,7 +47,7 @@ export async function svgToPngDataUrl(svgString: string, width = 900, height = 5
   });
 }
 
-export async function generatePDF({ assignment, papers, params, diagramImages }: GeneratePDFOptions) {
+export async function generatePDF({ assignment, papers, params, diagramImages, logoBase64: providedLogo }: GeneratePDFOptions) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = 210;
   const pageH = 297;
@@ -116,21 +117,8 @@ export async function generatePDF({ assignment, papers, params, diagramImages }:
   doc.text("TAKORADI TECHNICAL UNIVERSITY.", pageW / 2, y, { align: "center" });
   y += 10;
 
-  // Load and embed logo
-  let logoBase64: string | null = null;
-  try {
-    const logoModule = await import("@/assets/university-logo.jpg");
-    const res = await fetch(logoModule.default);
-    const blob = await res.blob();
-    logoBase64 = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    logoBase64 = null;
-  }
+  // Use pre-loaded logo passed from caller (avoids dynamic import at build time)
+  let logoBase64: string | null = providedLogo ?? null;
 
   const logoSize = 55;
   const logoX = (pageW - logoSize) / 2;
