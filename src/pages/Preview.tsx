@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   GraduationCap, FileText, Download, BookOpen, ExternalLink,
-  ChevronDown, ChevronUp, Sparkles, Copy, Check, ArrowLeft
+  ChevronDown, ChevronUp, Sparkles, Copy, Check, ArrowLeft, Link2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -236,7 +236,7 @@ export default function Preview() {
               <h2 className="font-display text-lg font-bold mb-4" style={{ color: "hsl(var(--gold))" }}>
                 Appendix: Source Papers & URLs
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {papers?.map((paper: any, i: number) => (
                   <div key={i} className="paper-card">
                     <div className="flex items-start justify-between gap-3">
@@ -250,13 +250,28 @@ export default function Preview() {
                         <p className="text-xs mb-2" style={{ color: "hsl(var(--muted-foreground))" }}>
                           {paper.authors?.join(", ")}
                         </p>
-                        {paper.url && (
-                          <a href={paper.url} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-xs hover:underline"
-                            style={{ color: "hsl(var(--blue-glow))" }}>
-                            <ExternalLink className="w-3 h-3" />
-                            {paper.url.length > 60 ? paper.url.substring(0, 60) + "..." : paper.url}
-                          </a>
+                        {paper.url ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <a href={paper.url} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs hover:underline"
+                              style={{ color: "hsl(var(--blue-glow))" }}>
+                              <Link2 className="w-3 h-3" />
+                              {paper.url.length > 55 ? paper.url.substring(0, 55) + "..." : paper.url}
+                            </a>
+                            <a
+                              href={paper.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded font-semibold hover:opacity-80 transition-opacity"
+                              style={{ background: "var(--gradient-gold)", color: "hsl(var(--navy-deep))" }}
+                            >
+                              <ExternalLink className="w-3 h-3" /> Open / Download
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-xs italic" style={{ color: "hsl(var(--muted-foreground))" }}>
+                            No direct URL available — search by title on Semantic Scholar
+                          </span>
                         )}
                       </div>
                     </div>
@@ -268,7 +283,7 @@ export default function Preview() {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            {/* Papers summary */}
+          {/* Papers summary */}
             <div className="glass-card p-4">
               <h3 className="font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: "hsl(var(--gold))" }}>
                 <BookOpen className="w-4 h-4" /> 5 Source Papers
@@ -280,9 +295,20 @@ export default function Preview() {
                     <p className="text-xs font-medium leading-tight mb-1" style={{ color: "hsl(var(--foreground))" }}>
                       {paper.title?.substring(0, 80)}{paper.title?.length > 80 ? "..." : ""}
                     </p>
-                    <p className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
+                    <p className="text-xs mb-1.5" style={{ color: "hsl(var(--muted-foreground))" }}>
                       {paper.authors?.[0]}{paper.authors?.length > 1 ? ` et al.` : ""} • {paper.year}
                     </p>
+                    {paper.url && (
+                      <a
+                        href={paper.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded font-medium hover:opacity-80 transition-opacity"
+                        style={{ background: "hsl(var(--blue-glow) / 0.15)", color: "hsl(var(--blue-glow))", border: "1px solid hsl(var(--blue-glow) / 0.3)" }}
+                      >
+                        <ExternalLink className="w-3 h-3" /> Open Paper
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>
