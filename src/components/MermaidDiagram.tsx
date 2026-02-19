@@ -7,19 +7,28 @@ interface MermaidDiagramProps {
 
 /**
  * Sanitize Mermaid code to fix common AI-generated syntax errors.
- * Removes citation patterns like [1],[2],[3] inside node labels which
- * conflict with Mermaid's square bracket node syntax.
  */
 function sanitizeMermaidCode(code: string): string {
   if (!code) return code;
-  // Remove citation refs like [1],[2],[3] that appear inside node labels
-  // e.g. "Literature Review & Gap Analysis[1],[2],[3]" -> "Literature Review and Gap Analysis"
+
   return code
-    .replace(/\[(\d+)\](,\[(\d+)\])*/g, "")   // strip [1],[2],[3] etc.
-    .replace(/&/g, "and")                        // & can sometimes confuse parsers
-    .replace(/≤/g, "<=")                         // replace unicode math
-    .replace(/[\u2019\u2018]/g, "'")             // smart quotes
-    .replace(/[\u201C\u201D]/g, '"');            // smart double quotes
+    // Strip citation refs ANYWHERE they appear: [1], [2],[3], [1,2,3], etc.
+    .replace(/\[[\d,\s]+\]/g, "")
+    // Remove parenthetical citations like (Smith et al., 2023)
+    .replace(/\([^)]*\d{4}[^)]*\)/g, "")
+    // Replace & which confuses some parsers
+    .replace(/&/g, "and")
+    // Replace unicode math symbols
+    .replace(/≤/g, "<=")
+    .replace(/≥/g, ">=")
+    .replace(/≠/g, "!=")
+    // Normalize smart quotes
+    .replace(/[\u2019\u2018]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    // Remove any stray backslash-n that isn't a real newline
+    .replace(/\\n/g, "\n")
+    // Strip trailing commas inside node labels before closing brackets
+    .replace(/,(\s*[\]\)>])/g, "$1");
 }
 
 

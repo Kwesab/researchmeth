@@ -51,11 +51,15 @@ export default function Preview() {
         mermaid.initialize({ startOnLoad: false, theme: "dark" });
         // Sanitize helper — mirrors MermaidDiagram component
         const sanitize = (code: string) => code
-          .replace(/\[(\d+)\](,\[(\d+)\])*/g, "")
+          .replace(/\[[\d,\s]+\]/g, "")
+          .replace(/\([^)]*\d{4}[^)]*\)/g, "")
           .replace(/&/g, "and")
           .replace(/≤/g, "<=")
+          .replace(/≥/g, ">=")
+          .replace(/≠/g, "!=")
           .replace(/[\u2019\u2018]/g, "'")
-          .replace(/[\u201C\u201D]/g, '"');
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/,(\s*[\]\)>])/g, "$1");
 
         diagramImages = await Promise.all(
           assignment.diagrams.map(async (d: any, i: number) => {
