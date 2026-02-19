@@ -32,7 +32,7 @@ export async function svgToPngDataUrl(svgString: string, width = 900, height = 5
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (!ctx) { resolve(null); return; }
-        ctx.fillStyle = "#0a0e1a";
+        ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
         URL.revokeObjectURL(url);
