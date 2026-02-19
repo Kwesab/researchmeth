@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import MermaidDiagram from "@/components/MermaidDiagram";
 import EndnoteScreenshot from "@/components/EndnoteScreenshot";
-import { generatePDF } from "@/lib/generatePDF";
+import { generatePDF, svgToPngDataUrl } from "@/lib/generatePDF";
 import { generateRIS } from "@/lib/generateRIS";
 
 export default function Preview() {
@@ -44,7 +44,26 @@ export default function Preview() {
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      await generatePDF({ assignment, papers, params });
+      // Render each Mermaid diagram to SVG, then convert to PNG for embedding
+      let diagramImages: (string | null)[] = [];
+      if (assignment?.diagrams?.length) {
+        const mermaid = (await import("mermaid")).default;
+        mermaid.initialize({ startOnLoad: false, theme: "dark" });
+        diagramImages = await Promise.all(
+          assignment.diagrams.map(async (d: any, i: number) => {
+            try {
+              const code = typeof d.code === "string" ? d.code : JSON.stringify(d.code);
+              const id = `pdf_diag_${i}_${Date.now()}`;
+              const { svg } = await mermaid.render(id, code);
+              // Natural size from SVG viewBox for good resolution
+              return await svgToPngDataUrl(svg, 1200, 600);
+            } catch {
+              return null;
+            }
+          })
+        );
+      }
+      await generatePDF({ assignment, papers, params, diagramImages });
       toast({ title: "PDF Downloaded", description: "ResearchAssignment.pdf saved to your downloads." });
     } catch (e: any) {
       toast({ title: "PDF Error", description: e.message, variant: "destructive" });
