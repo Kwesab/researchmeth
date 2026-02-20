@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   GraduationCap, FileText, Download, BookOpen, ExternalLink,
-  ChevronDown, ChevronUp, Sparkles, Copy, Check, ArrowLeft, Link2
+  ChevronDown, ChevronUp, Sparkles, Copy, Check, ArrowLeft, Link2, Printer, ArrowUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import MermaidDiagram from "@/components/MermaidDiagram";
 import EndnoteScreenshot from "@/components/EndnoteScreenshot";
@@ -16,23 +17,65 @@ export default function Preview() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [data, setData] = useState<any>(null);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ abstract: true });
   const [copied, setCopied] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const assignmentRef = useRef<HTMLDivElement>(null);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   useEffect(() => {
     const stored = sessionStorage.getItem("researchData");
-    if (!stored) { navigate("/"); return; }
-    setData(JSON.parse(stored));
+    if (!stored) { setIsLoading(false); navigate("/"); return; }
+    try {
+      setData(JSON.parse(stored));
+    } catch {
+      navigate("/");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 500);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const scrollToSection = (key: string) => {
+    sectionRefs.current[key]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  if (!data && isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center animate-in">
+        <div className="text-center">
+          <div className="w-14 h-14 rounded-xl mx-auto mb-4 animate-pulse" style={{ background: "hsl(var(--gold) / 0.2)" }} />
+          <p className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>Loading assignment...</p>
+        </div>
+      </div>
+    );
+  }
   if (!data) return null;
 
   const { papers, assignment, params } = data;
 
   const toggleSection = (key: string) => {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const expandAll = () => {
+    setExpandedSections(sections.reduce((acc, s) => ({ ...acc, [s.key]: true }), {}));
+  };
+
+  const collapseAll = () => {
+    setExpandedSections(sections.reduce((acc, s) => ({ ...acc, [s.key]: false }), {}));
   };
 
   const handleCopyRef = async () => {
@@ -138,12 +181,20 @@ export default function Preview() {
     if (!val) return "";
     if (typeof val === "string") return val;
     if (typeof val === "object") {
-      // Handle {title, plan} or {title, content} or any object by joining values
       return Object.values(val)
         .map((v) => (typeof v === "string" ? v : JSON.stringify(v)))
         .join("\n\n");
     }
     return String(val);
+  };
+
+  /** Split content into paragraphs for proper spacing. Double newlines = paragraph breaks. */
+  const toParagraphs = (text: string): string[] => {
+    if (!text?.trim()) return [];
+    return text
+      .split(/\n\n+/)
+      .map(p => p.trim())
+      .filter(Boolean);
   };
 
   const sections = [
@@ -156,12 +207,16 @@ export default function Preview() {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen animate-in">
       {/* Header */}
-      <header className="border-b sticky top-0 z-50" style={{ borderColor: "hsl(var(--navy-border))", background: "hsl(var(--background))" }}>
+      <header className="border-b sticky top-0 z-50 backdrop-blur-md" style={{ borderColor: "hsl(var(--navy-border))", background: "hsl(var(--background) / 0.92)" }}>
         <div className="container mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/")} className="flex items-center gap-1 text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-1.5 text-sm px-2 py-1 -ml-2 rounded-lg transition-colors hover:bg-white/5"
+              style={{ color: "hsl(var(--muted-foreground))" }}
+            >
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
             <div className="w-px h-4" style={{ background: "hsl(var(--border))" }} />
@@ -173,34 +228,49 @@ export default function Preview() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadRIS}
-              className="text-xs"
-              style={{ borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
-            >
-              <Download className="w-3 h-3 mr-1" /> .RIS
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadBibTeX}
-              className="text-xs"
-              style={{ borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
-            >
-              <Download className="w-3 h-3 mr-1" /> .BibTeX
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleDownloadPDF}
-              disabled={isGeneratingPDF}
-              className="text-xs font-semibold"
-              style={{ background: "var(--gradient-gold)", color: "hsl(var(--navy-deep))" }}
-            >
-              <Download className="w-3 h-3 mr-1" />
-              {isGeneratingPDF ? "Generating..." : "Download PDF"}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadRIS}
+                  className="text-xs"
+                  style={{ borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
+                >
+                  <Download className="w-3 h-3 mr-1" /> .RIS
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Import into Mendeley or EndNote</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadBibTeX}
+                  className="text-xs"
+                  style={{ borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
+                >
+                  <Download className="w-3 h-3 mr-1" /> .BibTeX
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Import into Mendeley or Zotero</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={handleDownloadPDF}
+                  disabled={isGeneratingPDF}
+                  className="text-xs font-semibold"
+                  style={{ background: "var(--gradient-gold)", color: "hsl(var(--navy-deep))" }}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  {isGeneratingPDF ? "Generating..." : "Download PDF"}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Generate and save full assignment as PDF</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
@@ -210,7 +280,7 @@ export default function Preview() {
           {/* Main Assignment */}
           <div className="lg:col-span-2 space-y-4" ref={assignmentRef}>
             {/* Cover Page */}
-            <div className="glass-card p-8 text-center gold-border border">
+            <div className="glass-card p-8 text-center gold-border border shadow-xl">
               <div className="mb-4">
                 <Sparkles className="w-8 h-8 mx-auto mb-3" style={{ color: "hsl(var(--gold))" }} />
                 <div className="text-xs font-mono mb-4" style={{ color: "hsl(var(--muted-foreground))" }}>RESEARCH METHODS ASSIGNMENT</div>
@@ -231,10 +301,26 @@ export default function Preview() {
             </div>
 
             {/* Assignment Sections */}
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={expandAll}
+                className="text-xs px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                style={{ color: "hsl(var(--muted-foreground))" }}
+              >
+                Expand all
+              </button>
+              <button
+                onClick={collapseAll}
+                className="text-xs px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                style={{ color: "hsl(var(--muted-foreground))" }}
+              >
+                Collapse all
+              </button>
+            </div>
             {sections.map(({ key, label, content }) => (
-              <div key={key} className="glass-card overflow-hidden">
+              <div key={key} className="glass-card overflow-hidden transition-all duration-200">
                 <button
-                  className="w-full flex items-center justify-between p-5 text-left"
+                  className="w-full flex items-center justify-between p-5 text-left transition-colors hover:bg-white/[0.02] rounded-t-xl"
                   onClick={() => toggleSection(key)}
                 >
                   <span className="font-display font-semibold" style={{ color: "hsl(var(--gold))" }}>{label}</span>
@@ -245,8 +331,15 @@ export default function Preview() {
                 </button>
                 {(expandedSections[key] || key === "abstract") && (
                   <div className="px-5 pb-5">
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "hsl(var(--foreground) / 0.85)" }}>
-                      {content || "Content will appear here..."}
+                    <div className="text-sm prose-assignment max-w-none" style={{ color: "hsl(var(--foreground) / 0.9)" }}>
+                      {content
+                        ? toParagraphs(content).map((para, i) => (
+                            <p key={i} className="mb-5 last:mb-0">
+                              {para}
+                            </p>
+                          ))
+                        : <p className="text-muted-foreground italic">Content will appear here...</p>
+                      }
                     </div>
                   </div>
                 )}
@@ -274,8 +367,13 @@ export default function Preview() {
             <div className="glass-card p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-display text-lg font-bold" style={{ color: "hsl(var(--gold))" }}>References (IEEE Format)</h2>
-                <button onClick={handleCopyRef} className="flex items-center gap-1 text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
-                  {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                <button
+                  onClick={handleCopyRef}
+                  className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors hover:bg-white/5"
+                  style={{ color: copied ? "hsl(142 76% 46%)" : "hsl(var(--muted-foreground))" }}
+                  aria-label={copied ? "Copied to clipboard" : "Copy all references"}
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? "Copied!" : "Copy all"}
                 </button>
               </div>
@@ -373,33 +471,48 @@ export default function Preview() {
             <div className="glass-card p-4">
               <h3 className="font-semibold text-sm mb-3" style={{ color: "hsl(var(--gold))" }}>Downloads</h3>
               <div className="space-y-2">
-                <Button
-                  className="w-full justify-start text-sm h-10"
-                  onClick={handleDownloadPDF}
-                  disabled={isGeneratingPDF}
-                  style={{ background: "var(--gradient-gold)", color: "hsl(var(--navy-deep))" }}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  ResearchAssignment.pdf
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-sm h-10"
-                  onClick={handleDownloadRIS}
-                  style={{ borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  references.ris
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-sm h-10"
-                  onClick={handleDownloadBibTeX}
-                  style={{ borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  references.bib
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="w-full justify-start text-sm h-10"
+                      onClick={handleDownloadPDF}
+                      disabled={isGeneratingPDF}
+                      style={{ background: "var(--gradient-gold)", color: "hsl(var(--navy-deep))" }}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      ResearchAssignment.pdf
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Generate and save full assignment as PDF</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-sm h-10"
+                      onClick={handleDownloadRIS}
+                      style={{ borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      references.ris
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Import into Mendeley or EndNote</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-sm h-10"
+                      onClick={handleDownloadBibTeX}
+                      style={{ borderColor: "hsl(var(--navy-border))", color: "hsl(var(--foreground))" }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      references.bib
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Import into Mendeley or Zotero</TooltipContent>
+                </Tooltip>
               </div>
             </div>
 

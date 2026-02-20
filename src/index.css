@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @layer base {
   :root {
     /* Core academic palette — deep navy + gold */
@@ -77,13 +75,13 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     background: var(--gradient-hero);
     min-height: 100vh;
   }
 
   h1, h2, h3, .font-display {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Outfit', sans-serif;
   }
 
   code, pre, .font-mono {
@@ -97,6 +95,12 @@
     background: var(--gradient-card);
     border-color: hsl(var(--navy-border));
     box-shadow: var(--shadow-card);
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  }
+
+  .glass-card:hover {
+    border-color: hsl(var(--gold) / 0.25);
+    box-shadow: var(--shadow-card), 0 0 40px hsl(var(--gold) / 0.06);
   }
 
   .gold-border {
@@ -134,7 +138,7 @@
   }
 
   .section-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Outfit', sans-serif;
     @apply text-2xl font-bold;
     color: hsl(var(--gold));
   }
@@ -200,12 +204,41 @@
 
   .fade-in-up { animation: fadeInUp 0.5s ease forwards; }
 
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-in { animation: fadeIn 0.4s ease forwards; }
+
+  .btn-gold {
+    background: var(--gradient-gold);
+    color: hsl(var(--navy-deep));
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+
+  .btn-gold:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 24px hsl(43 85% 58% / 0.35);
+  }
+
+  .btn-gold:active {
+    transform: translateY(0);
+  }
+
+  .input-focus:focus-within,
+  .input-focus:focus {
+    border-color: hsl(var(--gold) / 0.6);
+    box-shadow: 0 0 0 3px hsl(var(--gold) / 0.15);
+    outline: none;
+  }
+
   .assignment-section {
     @apply mb-8;
   }
 
   .assignment-section h2 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Outfit', sans-serif;
     @apply text-xl font-bold mb-3;
     color: hsl(var(--gold));
     border-bottom: 1px solid hsl(var(--gold) / 0.3);
@@ -213,7 +246,7 @@
   }
 
   .assignment-section h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Outfit', sans-serif;
     @apply text-lg font-semibold mb-2;
     color: hsl(var(--blue-glow));
   }
@@ -223,10 +256,51 @@
     color: hsl(var(--foreground) / 0.85);
   }
 
+  .pipeline-step-card {
+    @apply rounded-xl transition-all duration-300 border;
+    border-width: 1px 1px 1px 4px;
+    border-color: hsl(var(--navy-border));
+    border-left-color: hsl(var(--navy-border));
+  }
+
+  .pipeline-step-card.done {
+    border-left-color: hsl(var(--gold));
+    background: hsl(var(--navy-surface));
+  }
+
+  .pipeline-step-card.active {
+    border-left-color: hsl(var(--gold));
+    border-color: hsl(var(--gold) / 0.35);
+    box-shadow: 0 4px 24px hsl(0 0% 0% / 0.25);
+  }
+
+  .pipeline-step-card.error {
+    border-left-color: hsl(0 72% 55%);
+    border-color: hsl(0 72% 55% / 0.35);
+  }
+
   .ref-item {
     @apply text-sm leading-relaxed mb-2;
     color: hsl(var(--foreground) / 0.8);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
+  }
+
+  /* Academic paragraph styling */
+  .prose-assignment {
+    line-height: 1.75;
+    letter-spacing: 0.01em;
+  }
+
+  .prose-assignment p {
+    margin-bottom: 1.25rem;
+  }
+
+  .prose-assignment p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prose-assignment p + p {
+    text-indent: 0;
   }
 }

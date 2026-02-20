@@ -92,14 +92,28 @@ export async function generatePDF({ assignment, papers, params, diagramImages, l
     return yPos;
   };
 
+  /** Write text with proper paragraph spacing. Double newlines = paragraph break. */
   const writeBlock = (text: string, indent = 0, size = 11) => {
+    const raw = stringifyField(text) || "";
+    const paragraphs = raw.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+    if (paragraphs.length === 0) return;
+
     setFont("normal", size);
     doc.setTextColor(0, 0, 0);
-    const lines = doc.splitTextToSize(stringifyField(text) || "", contentW - indent);
-    lines.forEach((line: string) => {
-      checkY(6);
-      doc.text(line, marginL + indent, y);
-      y += size * 0.42;
+    const lineHeight = size * 0.45;
+    const paragraphGap = 4; // mm between paragraphs
+
+    paragraphs.forEach((para, i) => {
+      if (i > 0) {
+        checkY(paragraphGap);
+        y += paragraphGap;
+      }
+      const lines = doc.splitTextToSize(para, contentW - indent);
+      lines.forEach((line: string) => {
+        checkY(lineHeight + 1);
+        doc.text(line, marginL + indent, y);
+        y += lineHeight;
+      });
     });
     y += 3;
   };

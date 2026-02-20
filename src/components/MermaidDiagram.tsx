@@ -53,7 +53,7 @@ export default function MermaidDiagram({ code, id }: MermaidDiagramProps) {
             lineColor: "#4a5568",
             secondaryColor: "#1a2035",
             tertiaryColor: "#0f1629",
-            fontFamily: "Inter, sans-serif",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
           },
         });
         const cleanId = id.replace(/[^a-zA-Z0-9]/g, "_");
