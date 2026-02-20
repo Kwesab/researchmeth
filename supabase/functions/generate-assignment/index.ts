@@ -52,7 +52,7 @@ You NEVER use bullet points, markdown bold (**text**), asterisks, headers in pro
 You never write in a formulaic pattern. Each paragraph is organically connected to the next.
 Write in formal academic English. Follow IEEE citation format strictly. Never plagiarize.`;
 
-    const userPrompt = `Generate a complete, polished research methods assignment on the topic: "${topic}"
+    const userPrompt = `Generate a complete, polished, LONG research methods assignment on the topic: "${topic}"
 
 Based on these 5 scientific computing papers:
 
@@ -65,23 +65,24 @@ WRITING STYLE RULES — CRITICAL:
 - The text must read as if written by a human expert. Avoid repetitive phrasing, mechanical structure, or AI-sounding patterns like "Firstly... Secondly... Thirdly...".
 - Where a gap or limitation is described, complete the full thought naturally — never cut off mid-sentence.
 - Write continuous paragraphs with natural breaks. No orphaned sentence fragments.
+- TARGET TOTAL LENGTH: The combined word count of all sections must be at least 4,500 words, targeting a 13–15 page printed document.
 
 DIAGRAMS RULE: Only include diagrams if the topic genuinely benefits from a visual representation (e.g., system architectures, process flows, pipelines). For purely theoretical or literature-survey topics, include at most 1 simple diagram or an empty array []. Quality over quantity — never pad with redundant diagrams.
 
 Return ONLY a valid JSON object with this EXACT structure (no markdown, no code blocks around the JSON):
 
 {
-  "abstract": "280-320 word abstract written as one cohesive paragraph. Covers: the research context, what the 5 papers address, the key gaps found, the proposed method, and expected contribution. Write it as a single polished paragraph.",
+  "abstract": "350-420 word abstract written as two cohesive paragraphs. First paragraph: research context, what the 5 papers address, key gaps found. Second paragraph: the proposed method, expected contribution, and significance to the field.",
 
-  "introduction": "650-800 word introduction written as flowing prose paragraphs. Open with a broad, intellectually engaging narrative about the historical or social context of ${topic} — not a definition, but a story of how this domain emerged and why it matters. Gradually narrow to the specific problem. Explain the research significance. State the objectives of the assignment and briefly describe its structure. Avoid any list-style formatting.",
+  "introduction": "900-1100 word introduction written as flowing prose paragraphs. Open with a broad, intellectually engaging narrative about the historical or social context of ${topic} — not a definition, but a story of how this domain emerged and why it matters. Then explore the current landscape in depth: industry trends, real-world challenges, policy implications. Gradually narrow to the specific problem. Explain the research significance in concrete terms. State the objectives of the assignment and describe its structure in a closing paragraph. Avoid any list-style formatting.",
 
-  "literatureReview": "900-1100 word literature review written as continuous prose paragraphs. Begin with an overview of the broader research landscape. Then naturally weave through each paper [1]-[5] in prose — discuss their methodology, contributions, and limitations organically within the text. Do not treat each paper as a separate numbered item. Compare approaches. Identify 3-4 concrete research gaps, explaining each gap in full sentences that do not trail off. End with a synthesising paragraph about what the field still needs.",
+  "literatureReview": "1300-1600 word literature review written as continuous prose paragraphs. Begin with a broad survey of the research landscape and theoretical underpinnings of ${topic}. Then naturally weave through each paper [1]-[5] in flowing prose — discuss their methodology, experimental design, key findings, contributions, and limitations organically. Do not treat each paper as a separate numbered item. Group papers thematically where appropriate. Compare and contrast approaches. Identify 4-5 concrete research gaps, explaining each gap in full, complete sentences. End with a rich synthesising paragraph about what the field still needs and how the gaps connect to each other.",
 
-  "proposedMethod": "750-900 word description of an original proposed research method. Write as flowing prose. Explain the theoretical grounding, research design rationale, data collection approach, analytical techniques, and how this method directly addresses the gaps found. Draw on ideas from all 5 papers without explicitly saying 'as stated in [1]' repeatedly — integrate the ideas naturally. The method must be genuinely novel and convincingly justified.",
+  "proposedMethod": "1000-1200 word description of an original proposed research method written as flowing prose paragraphs. Section 1: theoretical grounding and motivation (why this method). Section 2: research design and paradigm (qualitative/quantitative/mixed, justification). Section 3: data collection approach (sources, instruments, sampling strategy). Section 4: analytical techniques and tools. Section 5: ethical considerations and limitations. Section 6: how this method directly and innovatively addresses the gaps found. Draw on ideas from all 5 papers without explicitly saying 'as stated in [1]' repeatedly — integrate ideas naturally. The method must be genuinely novel and convincingly justified.",
 
-  "implementationPlan": "420-500 word implementation plan written as prose paragraphs (not a bullet list). Describe five phases with approximate timeframes woven into the prose: initial framework and literature synthesis (weeks 1-4), data collection and environment setup (weeks 5-10), experimentation and analysis (weeks 11-16), evaluation and validation (weeks 17-20), and writing and dissemination (weeks 21-24). Describe specific tasks and success indicators naturally within the paragraphs.",
+  "implementationPlan": "600-750 word implementation plan written as prose paragraphs (not a bullet list). Describe six phases with approximate timeframes woven into the prose: (1) initial framework and literature synthesis (weeks 1-4), (2) data collection and environment setup (weeks 5-10), (3) system development and prototyping (weeks 11-14), (4) experimentation and analysis (weeks 15-18), (5) evaluation and validation (weeks 19-21), (6) writing, peer review, and dissemination (weeks 22-24). For each phase describe specific tasks, team roles where applicable, deliverables, and success indicators naturally within the paragraphs. Close with a paragraph on risk management and contingency planning.",
 
-  "conclusion": "320-400 word conclusion written as flowing prose. Summarise the literature review findings, highlight what makes the proposed method novel, discuss the expected contribution to ${topic}, acknowledge limitations honestly, and close with a forward-looking statement that feels genuinely considered — not a formulaic call to action.",
+  "conclusion": "450-550 word conclusion written as flowing prose. Open by reflecting on the journey of the assignment. Summarise the key findings from the literature review — not as a list but as a synthesised narrative. Highlight what makes the proposed method novel and why it represents a meaningful contribution to ${topic}. Discuss limitations honestly and at length. Propose two or three specific directions for future work, explained as full paragraphs. Close with a genuinely considered forward-looking statement about the long-term impact of this research area.",
 
   "diagrams": [
     // Only include 1-2 diagrams if the topic has clear system/process components worth visualising. Use an empty array [] for purely theoretical topics.
