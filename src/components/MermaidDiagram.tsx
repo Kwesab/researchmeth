@@ -12,6 +12,8 @@ function sanitizeMermaidCode(code: string): string {
   if (!code) return code;
 
   return code
+    // Fix invalid arrow syntax: -->|Label|> should be -->|Label|
+    .replace(/(\|[^|]*)\|>/g, "$1|")
     // Strip citation refs ANYWHERE they appear: [1], [2],[3], [1,2,3], etc.
     .replace(/\[[\d,\s]+\]/g, "")
     // Remove parenthetical citations like (Smith et al., 2023)

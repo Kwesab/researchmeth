@@ -148,12 +148,34 @@ export async function generatePDF({ assignment, papers, params, diagramImages, l
   doc.line(marginL + 20, y, pageW - marginR - 20, y);
   y += 10;
 
-  // Logo — centred, appropriately sized
+  // Logo — centred, appropriately sized, rendered on white canvas to ensure clean background
   let logoBase64: string | null = providedLogo ?? null;
   const logoSize = 48;
   const logoX = (pageW - logoSize) / 2;
   if (logoBase64) {
-    doc.addImage(logoBase64, "JPEG", logoX, y, logoSize, logoSize);
+    // Re-render logo on a white canvas to strip any transparent/dark background
+    try {
+      const whiteBgLogo = await new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const scale = 4; // render at 4× for crispness
+          canvas.width = 400 * scale;
+          canvas.height = 400 * scale;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { resolve(logoBase64!); return; }
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => resolve(logoBase64!);
+        img.src = logoBase64!;
+      });
+      doc.addImage(whiteBgLogo, "PNG", logoX, y, logoSize, logoSize);
+    } catch {
+      doc.addImage(logoBase64, "JPEG", logoX, y, logoSize, logoSize);
+    }
     y += logoSize + 10;
   } else {
     y += 10;

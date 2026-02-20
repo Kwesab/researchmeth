@@ -146,35 +146,43 @@ export default function Preview() {
 
   const handleDownloadRIS = () => {
     const ris = generateRIS(papers);
-    // text/plain so OS and browsers don't block — Mendeley/EndNote key off the .ris extension
-    const blob = new Blob([ris], { type: "text/plain;charset=utf-8" });
+    // application/x-research-info-systems is the correct MIME for .ris files
+    // Browsers/OS will associate this with EndNote, Mendeley, Zotero automatically
+    const blob = new Blob([ris], { type: "application/x-research-info-systems;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = "references.ris";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-    toast({ title: "RIS Downloaded", description: "references.ris — open directly in Mendeley or EndNote." });
+    URL.revokeObjectURL(url);
+    toast({ title: "RIS Downloaded", description: "Open references.ris directly in EndNote or Mendeley to import." });
   };
 
   const handleDownloadBibTeX = () => {
-    const bib = papers.map((p: any, i: number) => `@article{ref${i + 1},
-  title={${p.title}},
-  author={${p.authors?.join(" and ") || "Unknown"}},
-  year={${p.year || "2023"}},
-  journal={${p.venue || "IEEE"}},
-  url={${p.url || ""}},
-}`).join("\n\n");
-    const blob = new Blob([bib], { type: "text/plain;charset=utf-8" });
+    // Properly formatted BibTeX — each field on its own line, braces not quotes for special chars
+    const bib = papers.map((p: any, i: number) => {
+      const key = `ref${i + 1}`;
+      const title = (p.title || "Untitled").replace(/[{}]/g, "");
+      const authors = (p.authors || ["Unknown Author"]).join(" and ");
+      const year = p.year || "2023";
+      const journal = (p.venue || "IEEE").replace(/[{}]/g, "");
+      const url = p.url || "";
+      const abstract = (p.abstract || "").substring(0, 500).replace(/[{}]/g, "");
+      return `@article{${key},\n  title = {${title}},\n  author = {${authors}},\n  year = {${year}},\n  journal = {${journal}},\n  url = {${url}},\n  abstract = {${abstract}}\n}`;
+    }).join("\n\n");
+    // application/x-bibtex is the correct MIME for .bib files
+    const blob = new Blob([bib], { type: "application/x-bibtex;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = "references.bib";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-    toast({ title: "BibTeX Downloaded", description: "references.bib — open in Mendeley or Zotero." });
+    URL.revokeObjectURL(url);
+    toast({ title: "BibTeX Downloaded", description: "Open references.bib in Mendeley, Zotero, or JabRef to import." });
   };
 
   const stringifyContent = (val: any): string => {
