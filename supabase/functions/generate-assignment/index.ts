@@ -29,8 +29,8 @@ serve(async (req) => {
     const body = await req.json();
     const { papers, topic, studentName, courseName, institution, lecturer, year } = body;
 
-    const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
-    if (!GOOGLE_API_KEY) throw new Error("GOOGLE_API_KEY is not configured");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY is not configured");
 
     if (!papers || papers.length === 0) throw new Error("No papers provided");
 
@@ -108,28 +108,35 @@ FINAL CHECKS before returning:
 - The diagrams array must contain ONLY valid Mermaid code with no citation brackets inside node labels.
 - Return ONLY the raw JSON object. No markdown code fences. No extra commentary.`;
 
-    console.log("Calling Google Gemini API for assignment generation...");
+    console.log("Calling Groq API for assignment generation...");
 
     const aiResponse = await fetchWithRetry(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-          generationConfig: { temperature: 0.7 },
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 8000,
         }),
       }
     );
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
-      throw new Error(`Google Gemini API error ${aiResponse.status}: ${errText}`);
+      throw new Error(`Groq API error ${aiResponse.status}: ${errText}`);
     }
 
     const aiData = await aiResponse.json();
-    const rawContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const rawContent = aiData.choices?.[0]?.message?.content || "";
 
     console.log("AI response received, parsing JSON...");
 
