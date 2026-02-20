@@ -29,8 +29,8 @@ serve(async (req) => {
     const body = await req.json();
     const { papers, topic, studentName, courseName, institution, lecturer, year } = body;
 
-    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-    if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     if (!papers || papers.length === 0) throw new Error("No papers provided");
 
@@ -109,18 +109,18 @@ FINAL CHECKS before returning:
 - The diagrams array must contain ONLY valid Mermaid code with no citation brackets inside node labels.
 - Return ONLY the raw JSON object. No markdown code fences. No extra commentary.`;
 
-    console.log("Calling Groq API for assignment generation...");
+    console.log("Calling Lovable AI Gateway for assignment generation...");
 
     const aiResponse = await fetchWithRetry(
-      "https://api.groq.com/openai/v1/chat/completions",
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "google/gemini-2.5-pro",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -133,7 +133,7 @@ FINAL CHECKS before returning:
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
-      throw new Error(`Groq API error ${aiResponse.status}: ${errText}`);
+      throw new Error(`AI Gateway error ${aiResponse.status}: ${errText}`);
     }
 
     const aiData = await aiResponse.json();
