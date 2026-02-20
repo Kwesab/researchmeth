@@ -12,8 +12,8 @@ serve(async (req) => {
     const body = await req.json();
     const { papers, topic, studentName, courseName, institution, lecturer, year } = body;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
+    if (!GOOGLE_API_KEY) throw new Error("GOOGLE_API_KEY is not configured");
 
     if (!papers || papers.length === 0) throw new Error("No papers provided");
 
@@ -91,23 +91,20 @@ FINAL CHECKS before returning:
 - The diagrams array must contain ONLY valid Mermaid code with no citation brackets inside node labels.
 - Return ONLY the raw JSON object. No markdown code fences. No extra commentary.`;
 
-    console.log("Calling Lovable AI for assignment generation...");
+    console.log("Calling Google Gemini API for assignment generation...");
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.7,
-      }),
-    });
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          generationConfig: { temperature: 0.7 },
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
@@ -115,17 +112,12 @@ FINAL CHECKS before returning:
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "AI usage credits required. Please add credits to your workspace." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const errText = await aiResponse.text();
-      throw new Error(`AI gateway error ${aiResponse.status}: ${errText}`);
+      throw new Error(`Google Gemini API error ${aiResponse.status}: ${errText}`);
     }
 
     const aiData = await aiResponse.json();
-    const rawContent = aiData.choices?.[0]?.message?.content || "";
+    const rawContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     console.log("AI response received, parsing JSON...");
 
