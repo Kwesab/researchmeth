@@ -5,6 +5,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Exponential backoff fetch — retries on 429 / 5xx up to maxRetries times */
+async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries = 4): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const resp = await fetch(url, options);
+    if (resp.status === 429 || resp.status >= 500) {
+      if (attempt === maxRetries) return resp;
+      const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500; // 1s, 2s, 4s, 8s
+      console.log(`Google API rate limited (${resp.status}), retrying in ${Math.round(delay)}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await resp.text(); // consume body to avoid resource leak
+      await new Promise((r) => setTimeout(r, delay));
+      continue;
+    }
+    return resp;
+  }
+  throw new Error("Max retries exceeded");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -93,7 +110,7 @@ FINAL CHECKS before returning:
 
     console.log("Calling Google Gemini API for assignment generation...");
 
-    const aiResponse = await fetch(
+    const aiResponse = await fetchWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
       {
         method: "POST",
@@ -107,11 +124,6 @@ FINAL CHECKS before returning:
     );
 
     if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const errText = await aiResponse.text();
       throw new Error(`Google Gemini API error ${aiResponse.status}: ${errText}`);
     }
